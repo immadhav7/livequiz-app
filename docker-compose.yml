@@ -16,5 +16,20 @@ services:
       timeout: 5s
       retries: 20
 
+  app:
+    build: .
+    image: livequiz-app:local
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: livequiz
+      DB_USER: livequiz
+      DB_PASSWORD: livequiz
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
 volumes:
   mysql-data:
