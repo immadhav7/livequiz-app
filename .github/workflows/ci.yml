@@ -1,3 +1,4 @@
+# CI: build and test, publish the image to GHCR, then update the dev image tag in the deploy repo
 name: CI
 
 on:
@@ -66,3 +67,34 @@ jobs:
 
       - name: Push image
         run: docker push "${IMAGE}:${TAG}"
+
+  update-deploy-repo:
+    needs: image
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Set up SSH access to the deploy repo
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Update the dev image tag
+        run: |
+          TAG="${GITHUB_SHA::7}"
+          git clone "git@github.com:${GITHUB_REPOSITORY_OWNER}/livequiz-deploy.git"
+          cd livequiz-deploy
+          sed -i "s/^  tag: .*/  tag: \"${TAG}\"/" helm/livequiz/values-dev.yaml
+          git config user.name "livequiz-ci"
+          git config user.email "ci@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "Tag is already ${TAG}; nothing to commit"
+          else
+            git commit -am "ci: deploy livequiz-app ${TAG} to dev"
+            git push
+          fi
