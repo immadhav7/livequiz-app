@@ -31,6 +31,8 @@ Health endpoints (Actuator) expose `liveness` and `readiness` groups, used by th
 docker compose up --build
 ```
 
+The app is then available at `http://localhost:8080`, for example `http://localhost:8080/actuator/health`.
+
 Database settings come from the environment variables `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` and `DB_PASSWORD`, with defaults for local use.
 
 ## Tests
